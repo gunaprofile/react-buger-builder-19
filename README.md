@@ -1,219 +1,156 @@
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-## Add, Remove, Update and Build control component
-
-### BuildControls component
-* This is a functional component that return some JSX with Add,Remove Ingredients and Order Button also.
-* Add some css to the component as per your wish.
-```
-import classes from './BuildControls.css';
-const buildControls = (props) => (
-    <div className={classes.BuildControls}>
-        <div> Build controls - child component Build control will come here</div>
-        <button className={classes.OrderButton}>ORDER NOW</button>
-    </div>
-);
-```
-* Now we have to design/develop build control component which is the child of BuildControls component.
-* Here this component will export jsx with add and remove ingerdients button.
-* Add some css as per your need
+## Model, Backdrop component.
+### Model Component
+* Simple no need to explain..
 ```
 import React from 'react';
 
-import classes from './BuildControl.css';
+import classes from './Modal.css';
+import Aux from '../../../hoc/Aux';
 
-const buildControl = (props) => (
-    <div className={classes.BuildControl}>
-        <div className={classes.Label}>{props.label}</div>
-        <button 
-            className={classes.Less} 
-            onClick={props.removed} 
-            disabled={props.disabled}>Less</button>
-        <button 
-            className={classes.More} 
-            onClick={props.added}>More</button>
-    </div>
+const modal = ( props ) => (
+    <Aux>
+        <div
+            className={classes.Modal}
+            {props.children}
+        </div>
+    </Aux>
 );
 
-export default buildControl;
+export default modal;
 ```
-#### Add Ingredient Control
-* Now Add the above child component as multiple copies of component based on a static constant not state/props value in its parent component (BuildControls).
-```
-const controls = [
-    { label: 'Salad', type: 'salad' },
-    { label: 'Bacon', type: 'bacon' },
-    { label: 'Cheese', type: 'cheese' },
-    { label: 'Meat', type: 'meat' },
-];
+### Order Summary 
 
+* Use the above model in buger builder component to show order Summary.Lets create order summary as seperate component inside buger component
 ```
-* Now as i said create multiple component based on above static controls constant.
-```
-    const buildControls = (props) => (
-    <div className={classes.BuildControls}>
-        {controls.map(ctrl => (
-            <BuildControl 
-                key={ctrl.label} 
-                label={ctrl.label}
-            />
-        ))}
-        <button 
-            className={classes.OrderButton}
-            >ORDER NOW</button>
-    </div>
-);
+import React from 'react';
 
-```
-* Now we have to add a handler(funtion) to add ingredient in BugerBuilderComponent. which will be invoked from BuildControl->BuildControls->BurgerBuilder.
-```
-const INGREDIENT_PRICES = {
-    salad: 0.5,
-    cheese: 0.4,
-    meat: 1.3,
-    bacon: 0.7
+import Aux from '../../../hoc/Aux';
+
+const orderSummary = ( props ) => {
+    const ingredientSummary = Object.keys( props.ingredients )
+        .map( igKey => {
+            return (
+                <li key={igKey}>
+                    <span style={{ textTransform: 'capitalize' }}>{igKey}</span>: {props.ingredients[igKey]}
+                    // igKey is ingredient name eg: salad or meet...
+                </li> );
+        } );
+
+    return (
+        <Aux>
+            <h3>Your Order</h3>
+            <p>A delicious burger with the following ingredients:</p>
+            <ul>
+                {ingredientSummary}
+                //eg: <li>Salad:2</li>
+            </ul>
+            <p>Continue to Checkout?</p>
+        </Aux>
+    );
 };
-addIngredientHandler = ( type ) => {
-    const oldCount = this.state.ingredients[type];
-    const updatedCount = oldCount + 1;
-    const updatedIngredients = {
-        ...this.state.ingredients
-    };
-    updatedIngredients[type] = updatedCount;
-    const priceAddition = INGREDIENT_PRICES[type];
-    const oldPrice = this.state.totalPrice;
-    const newPrice = oldPrice + priceAddition;
-    this.setState( { totalPrice: newPrice, ingredients: updatedIngredients } );
-}
-
 ```
-* Above addIngredientHandler props will be forward to BuildControls
-
+### Pass order summary component to model which is in burger builder
 ```
-<BuildControls ingredientAdded={this.addIngredientHandler} />
+<Modal>
+    <OrderSummary ingredients={this.state.ingredients} />
+</Modal>
 ```
-* From BuildControls ingredientAdded props will be forward to BuildControl
+* Now we have to handle model based on "purchaseHandler" ,"purchaseCancelHandler" state value
 ```
-<BuildControl 
-    key={ctrl.label} 
-    label={ctrl.label}
-    added={() => props.ingredientAdded(ctrl.type)}
-/>
-```
-#### Remove Ingredient Control
-* follow same login for remove ingredient.
-```
-removeIngredientHandler = ( type ) => {
-        const oldCount = this.state.ingredients[type];
-        if ( oldCount <= 0 ) {
-            return;
-        }
-        const updatedCount = oldCount - 1;
-        const updatedIngredients = {
-            ...this.state.ingredients
-        };
-        updatedIngredients[type] = updatedCount;
-        const priceDeduction = INGREDIENT_PRICES[type];
-        const oldPrice = this.state.totalPrice;
-        const newPrice = oldPrice - priceDeduction;
-        this.setState( { totalPrice: newPrice, ingredients: updatedIngredients } );
-        this.updatePurchaseState(updatedIngredients);
-    }
-```
-* Above removeIngredientHandler props will be forward to BuildControls
-
-```
-<BuildControls ingredientAdded={this.addIngredientHandler}  ingredientRemoved={this.removeIngredientHandler}/>
-```
-* From BuildControls ingredientAdded props will be forward to BuildControl
-```
-<BuildControl 
-    key={ctrl.label} 
-    label={ctrl.label}
-    added={() => props.ingredientAdded(ctrl.type)}
-    removed={() => props.ingredientRemoved(ctrl.type)}
-/>
-```
-* We can't reduce ingredients as negative so that we should disable remove button if it reached Zero count.
-* before render that is inside render funtion add the below logic to disable button.
-```
-render () {
-        const disabledInfo = {
-            ...this.state.ingredients
-        };
-        for ( let key in disabledInfo ) {
-            disabledInfo[key] = disabledInfo[key] <= 0
-        }
-        // {salad: true, meat: false, ...}
-        return (
-            <Aux>
-                <Burger ingredients={this.state.ingredients} />
-                <BuildControls
-                    ingredientAdded={this.addIngredientHandler}
-                    ingredientRemoved={this.removeIngredientHandler}
-                    removeBtndisabled={disabledInfo}
-                />
-            </Aux>
-        );
+purchaseHandler = () => {
+        this.setState({purchasing: true});
     }
 
-```
-* Above removeBtndisabled props will be forward to BuildControls
-```
-<BuildControl 
-                key={ctrl.label} 
-                label={ctrl.label}
-                added={() => props.ingredientAdded(ctrl.type)}
-                removed={() => props.ingredientRemoved(ctrl.type)}
-                disableRemoveBtn={props.removeBtndisabled[ctrl.type]} />
-```
-* From BuildControls disableRemoveBtn props will be forward to BuildControl
-```
-<button 
-            className={classes.Less} 
-            onClick={props.removed} 
-            disabled={props.disableRemoveBtn}
->Less</button>
-```
-
-#### Update Buger Price 
-
-* Now pass totalPrice to Build controls from totalPrice state.
-```
-    <BuildControls
-        ingredientAdded={this.addIngredientHandler}
-        ingredientRemoved={this.removeIngredientHandler}
-        disabled={disabledInfo}
-        purchasable={this.state.purchasable}
-        price={this.state.totalPrice} 
-    />
-```
-* Burger price will visible on top of add/remove ingredients in Build Controls
-```
-    <p>Current Price: <strong>{props.price.toFixed(2)}</strong></p>
-```
-
-* No we have to add logic for updatePurchaseState
-```
-updatePurchaseState (ingredients) {
-        const sum = Object.keys( ingredients )
-            .map( igKey => {
-                return ingredients[igKey];
-            } )
-            .reduce( ( sum, el ) => {
-                return sum + el;
-            }, 0 );
-            // here second param 0 is the staring number, then it will increase based on logic
-        this.setState( { purchasable: sum > 0 } );
+    purchaseCancelHandler = () => {
+        this.setState({purchasing: false});
     }
+
+    purchaseContinueHandler = () => {
+        alert('You continue!');
+    }
+//in JSX return
+
+<Modal show={this.state.purchasing} modalClosed={this.purchaseCancelHandler}>
+    <OrderSummary 
+        ingredients={this.state.ingredients}
+        purchaseCancelled={this.purchaseCancelHandler}
+        purchaseContinued={this.purchaseContinueHandler} />
+</Modal>
+
+....
+....
+
+<BuildControls
+ingredientAdded={this.addIngredientHandler}
+ingredientRemoved={this.removeIngredientHandler}
+disabled={disabledInfo}
+purchasable={this.state.purchasable}
+ordered={this.purchaseHandler}
+price={this.state.totalPrice} />
 ```
-* Based on this enable/diable Order Now Button
+* Conditionally show hide model based on show props of model.
+* Model.js
 ```
-<button 
-    className={classes.OrderButton}
-    disabled={!props.purchasable}>
-    ORDER NOW
-</button>
+    style={{
+                transform: props.show ? 'translateY(0)' : 'translateY(-100vh)',
+                opacity: props.show ? '1' : '0'
+            }}>
 ```
-* Now we should call updatePurchaseState after add/ remove ingredients to check the purchasable state.
+### Create Backdrop component
+```
+import React from 'react';
+
+import classes from './Backdrop.css';
+
+const backdrop = (props) => (
+    props.show ? <div className={classes.Backdrop} onClick={props.clicked}></div> : null
+);
+
+export default backdrop;
+```
+* Use the above backdrop in model component, onClick of backdrop model should close so that we have added clicked handler below.
+
+```
+import Backdrop from '../Backdrop/Backdrop';
+<Backdrop show={props.show} clicked={props.modalClosed} />
+```
+### Button component in order summary.
+* here we used button class with conditionally dynamic class as stings , join(' ') is used to convert arry of strings to strings.
+```
+import React from 'react';
+
+import classes from './Button.css';
+
+const button = (props) => (
+    <button
+        className={[classes.Button, classes[props.btnType]].join(' ')}
+        onClick={props.clicked}>{props.children}</button>
+);
+
+export default button;
+```
+* Use button commponent in order summary component
+```
+import Button from '../../UI/Button/Button';
+
+//In JSX...
+<Button btnType="Danger" clicked={props.purchaseCancelled}>CANCEL</Button>
+<Button btnType="Success" clicked={props.purchaseContinued}>CONTINUE</Button>
+```
+* purchaseCancelled and purchaseContinued will be passed from orderSummary which is the child of Model as below
+
+```
+<Modal show={this.state.purchasing} modalClosed={this.purchaseCancelHandler}>
+    <OrderSummary 
+        ingredients={this.state.ingredients}
+        purchaseCancelled={this.purchaseCancelHandler}
+        purchaseContinued={this.purchaseContinueHandler} />
+</Modal>
+```
+* Add Total pricing details to Order sumary also. refer code.
+
+
+
 
