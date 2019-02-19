@@ -1,155 +1,248 @@
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-## Model, Backdrop component.
-### Model Component
-* Simple no need to explain..
+## Navigation
+### Toolbar
+* Functional component , with mutiple reuseable sub component
 ```
-import React from 'react';
+const toolbar = ( props ) => (
+    <header className={classes.Toolbar}>
+        <div>Menu</div>
+        <div>Logo</div>
+        <nav>
+            ...
+        </nav>
+    </header>
+);
 
-import classes from './Modal.css';
-import Aux from '../../../hoc/Aux';
+export default toolbar;
+```
+### Where to add toolbar ?
 
-const modal = ( props ) => (
+* In Layout component import toolbar component
+```
+import Toolbar from '../Navigation/Toolbar/Toolbar'
+const layout = (props) => (
     <Aux>
-        <div
-            className={classes.Modal}
+        <Toolbar/>
+        <div> SideDrawer With Backdrop</div>
+        <main className={classes.Content}>
             {props.children}
-        </div>
+        </main>
     </Aux>
 );
 
-export default modal;
+export default layout;
 ```
-### Order Summary 
-
-* Use the above model in buger builder component to show order Summary.Lets create order summary as seperate component inside buger component
+### Logo component
 ```
 import React from 'react';
 
-import Aux from '../../../hoc/Aux';
+import burgerLogo from '../../assets/images/burger-logo.png';
+import classes from './Logo.css';
 
-const orderSummary = ( props ) => {
-    const ingredientSummary = Object.keys( props.ingredients )
-        .map( igKey => {
-            return (
-                <li key={igKey}>
-                    <span style={{ textTransform: 'capitalize' }}>{igKey}</span>: {props.ingredients[igKey]}
-                    // igKey is ingredient name eg: salad or meet...
-                </li> );
-        } );
+const logo = (props) => (
+    <div className={classes.Logo} style={{height: props.height}}>
+        <img src={burgerLogo} alt="MyBurger" />
+    </div>
+);
 
+export default logo;
+```
+* Import this Logo component in toolbar component
+
+```
+import MyLogo from '../../Logo/Logo';
+const toolbar = ( props ) => (
+    <header className={classes.Toolbar}>
+        <div>Menu</div>
+        <div className={classes.Logo}>
+            <MyLogo />
+        </div>
+        <nav>
+            ...
+        </nav>
+    </header>
+);
+```
+* Now create NavigationItems to outsource in toolbar component.
+```
+const navigationItems = () => (
+    <ul>
+        <navigationItemLink>
+            :
+            :
+        <navigationItemLink>
+    </ul>
+);
+
+export default navigationItems;
+```
+* Now create NavigationItem to outsource in NavigationItems component.
+```
+const navigationItemLink = () => (
+        <li>
+            <a href="/"> A Link</a>
+        </li>
+        <li>
+            <a href="/"> Anybody there ??</a>
+        </li>
+);
+
+export default navigationItemLink;
+```
+* Now use the NavigationItems component in Toolbar component
+```
+import MyLogo from '../../Logo/Logo';
+const toolbar = ( props ) => (
+    <header className={classes.Toolbar}>
+        <div>Menu</div>
+        <div className={classes.Logo}>
+            <MyLogo />
+        </div>
+        <nav>
+            <NavigationItems/>
+        </nav>
+    </header>
+);
+```
+### SideDrawer component
+* Now create side drawer component 
+```
+const sideDrawer = ( props ) => {
+    let attachedClasses = [classes.SideDrawer, classes.Close];
+    if (props.open) {
+        attachedClasses = [classes.SideDrawer, classes.Open];
+    }
     return (
         <Aux>
-            <h3>Your Order</h3>
-            <p>A delicious burger with the following ingredients:</p>
-            <ul>
-                {ingredientSummary}
-                //eg: <li>Salad:2</li>
-            </ul>
-            <p>Continue to Checkout?</p>
+            <Backdrop show={props.open} clicked={props.closed}/>
+            <div className={attachedClasses.join(' ')}>
+                <div className={classes.Logo}>
+                    <Logo />
+                </div>
+                <nav>
+                    <NavigationItems />
+                </nav>
+            </div>
         </Aux>
     );
 };
+
+export default sideDrawer;
 ```
-### Pass order summary component to model which is in burger builder
+### Where to add SideDrawer ?
+
+* In Layout component import SideDrawer component
 ```
-<Modal>
-    <OrderSummary ingredients={this.state.ingredients} />
-</Modal>
+import SideDrawer from '../Navigation/SideDrawer/SideDrawer'
+const layout = (props) => (
+    <Aux>
+        <Toolbar/>
+        <SideDrawer/>
+        <main className={classes.Content}>
+            {props.children}
+        </main>
+    </Aux>
+);
+
+export default layout;
 ```
-* Now we have to handle model based on "purchaseHandler" ,"purchaseCancelHandler" state value
+### Toggle effect to side bar
+* For this first change Layout component into class based component from functional component.
 ```
-purchaseHandler = () => {
-        this.setState({purchasing: true});
+class Layout extends Component {
+    render () {
+        return (
+            <Aux>
+                <Toolbar />
+                <SideDrawer />
+                <main className={classes.Content}>
+                    { this.props.children}
+                </main>
+            </Aux>
+        );
+    }
+}
+
+export default Layout;
+```
+* Now add new state for showSideDrawer based on that toggle sideDrawer
+```
+class Layout extends Component {
+    state = {
+        showSideDrawer: false
     }
 
-    purchaseCancelHandler = () => {
-        this.setState({purchasing: false});
+    sideDrawerClosedHandler = () => {
+        this.setState( { showSideDrawer: false } );
     }
 
-    purchaseContinueHandler = () => {
-        alert('You continue!');
+    sideDrawerToggleHandler = () => {
+        this.setState( ( prevState ) => {
+            return { showSideDrawer: !prevState.showSideDrawer };
+        } );
     }
-//in JSX return
+    render () {
+        return (
+            <Aux>
+                <Toolbar drawerToggleClicked={this.sideDrawerToggleHandler} />
+                <SideDrawer open={this.state.showSideDrawer}
+                            closed={this.sideDrawerClosedHandler}/>
+                <main className={classes.Content}>
+                    { this.props.children}
+                </main>
+            </Aux>
+        );
+    }
+}
 
-<Modal show={this.state.purchasing} modalClosed={this.purchaseCancelHandler}>
-    <OrderSummary 
-        ingredients={this.state.ingredients}
-        purchaseCancelled={this.purchaseCancelHandler}
-        purchaseContinued={this.purchaseContinueHandler} />
-</Modal>
+export default Layout;
+```
+* Here SideDrawer open/close based on class state.
+* Intially it will set to closed state
+* sideDrawerToggleHandler function used to toggle state.
+* To call sideDrawerToggleHandler we need a hamburger icon on click of this icon we will call sideDrawerToggleHandler.
 
-....
-....
-
-<BuildControls
-ingredientAdded={this.addIngredientHandler}
-ingredientRemoved={this.removeIngredientHandler}
-disabled={disabledInfo}
-purchasable={this.state.purchasable}
-ordered={this.purchaseHandler}
-price={this.state.totalPrice} />
-```
-* Conditionally show hide model based on show props of model.
-* Model.js
-```
-    style={{
-                transform: props.show ? 'translateY(0)' : 'translateY(-100vh)',
-                opacity: props.show ? '1' : '0'
-            }}>
-```
-### Create Backdrop component
+### DrawerToggle Component (Hamburger Icon)
+* Here we will design hamburger icon using div class
 ```
 import React from 'react';
 
-import classes from './Backdrop.css';
+import classes from './DrawerToggle.css';
 
-const backdrop = (props) => (
-    props.show ? <div className={classes.Backdrop} onClick={props.clicked}></div> : null
+const drawerToggle = (props) => (
+    <div className={classes.DrawerToggle} onClick={props.clicked}>
+        <div></div>
+        <div></div>
+        <div></div>
+    </div>
 );
 
-export default backdrop;
+export default drawerToggle;
 ```
-* Use the above backdrop in model component, onClick of backdrop model should close so that we have added clicked handler below.
+### Where to use Hamburger Icon
+* Obiviously we will add Hamburger Icon (DrawerToggle component) in toolbar component
 
 ```
-import Backdrop from '../Backdrop/Backdrop';
-<Backdrop show={props.show} clicked={props.modalClosed} />
-```
-### Button component in order summary.
-* here we used button class with conditionally dynamic class as stings , join(' ') is used to convert arry of strings to strings.
-```
-import React from 'react';
+import DrawerToggle from '../SideDrawer/DrawerToggle/DrawerToggle';
 
-import classes from './Button.css';
-
-const button = (props) => (
-    <button
-        className={[classes.Button, classes[props.btnType]].join(' ')}
-        onClick={props.clicked}>{props.children}</button>
+const toolbar = ( props ) => (
+    <header className={classes.Toolbar}>
+        <DrawerToggle clicked={props.drawerToggleClicked} />
+        <div className={classes.Logo}>
+            <Logo />
+        </div>
+        <nav className={classes.DesktopOnly}>
+            <NavigationItems />
+        </nav>
+    </header>
 );
 
-export default button;
+export default toolbar;
 ```
-* Use button commponent in order summary component
-```
-import Button from '../../UI/Button/Button';
+* here onClick (DrawerToggle component Hamburger Icon) -> drawerToggleClicked (Toolbar component) -> sideDrawerToggleHandler (Layout component) based on that sideDrawer will show/hide.
 
-//In JSX...
-<Button btnType="Danger" clicked={props.purchaseCancelled}>CANCEL</Button>
-<Button btnType="Success" clicked={props.purchaseContinued}>CONTINUE</Button>
-```
-* purchaseCancelled and purchaseContinued will be passed from orderSummary which is the child of Model as below
 
-```
-<Modal show={this.state.purchasing} modalClosed={this.purchaseCancelHandler}>
-    <OrderSummary 
-        ingredients={this.state.ingredients}
-        purchaseCancelled={this.purchaseCancelHandler}
-        purchaseContinued={this.purchaseContinueHandler} />
-</Modal>
-```
-* Add Total pricing details to Order sumary also. refer code.
 
 
 
