@@ -7,7 +7,7 @@ import Backdrop from '../Backdrop/Backdrop';
 class Modal extends Component {
     // This could be a functional component, doesn't have to be a class
     shouldComponentUpdate(nextProps, nextState) {
-        if (nextProps.show !== this.props.show){
+        if (nextProps.show !== this.props.show || nextProps.children !== this.props.children){
             console.log('[Modal] shouldComponentUpdate');
             return true
         }else{
