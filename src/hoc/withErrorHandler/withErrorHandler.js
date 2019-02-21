@@ -1,9 +1,3 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
-
-## Handing Error
-* Here we are going to create a global wrapper (HOC) to handle error globally.
-* In this global error component we will show error message in model.
-```js
 import React, { Component } from 'react';
 
 import Modal from '../../components/UI/Modal/Modal';
@@ -45,30 +39,3 @@ const withErrorHandler = ( WrappedComponent, axios ) => {
 }
 
 export default withErrorHandler;
-
-```
-* in the above wrapper we are catching the common respose error with interceptor.
-* here WrappedComponent is the actual component which using this wapper.ie when we are using this in Builder component before export we have to wrap with this withErrprHandler Hoc as follows
-
-```js
-import withErrorHandler from '../../hoc/withErrorHandler/withErrorHandler'
-class BurgerBuilder extends Component {
-    ...
-}
-export default withErrorHandler(BurgerBuilder,axios);
-```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
