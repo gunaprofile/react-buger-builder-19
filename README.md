@@ -17,6 +17,7 @@ componentDidMount () {
 ```
 * But before component mount we should set the ingredients as null, this will cause error.
 * Use burger details as new variable if ingredients loaded we will show or else we will show spinner until ingredients load.
+
 ```js
 let orderSummary = null;
 let burger = this.state.error ? <p>Ingredients can't be loaded!</p> : <Spinner />;
@@ -48,6 +49,7 @@ return (
             {burger}  
     </Aux>
 );
+
 ```
 * In case if you give some wrong URL we won't get any error from interceptor.
 * In GET Request componentWillMount will load before componentDidMount so that it won't catch any error. But this will work fine with POST request.
