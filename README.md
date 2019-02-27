@@ -1,63 +1,79 @@
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-## Handing Error
-* Here we are going to create a global wrapper (HOC) to handle error globally.
-* In this global error component we will show error message in model.
+## Get data from Backend
+### Ingredients
+* Now we have to add some ingredients data in firebase DB as new node with some data.
+* Now we got the URL to access ingredients "https://react-buger-3dcbb.firebaseio.com/ingredients"
 ```js
-import React, { Component } from 'react';
-
-import Modal from '../../components/UI/Modal/Modal';
-import Aux from '../Aux/Aux';
-
-const withErrorHandler = ( WrappedComponent, axios ) => {
-    return class extends Component {
-        state = {
-            error: null
-        }
-
-        componentWillMount () {
-            axios.interceptors.request.use(req => {
-                this.setState({error: null});
-                return req;
-            });
-            axios.interceptors.response.use(res => res, error => {
-                this.setState({error: error});
-            });
-        }
-
-        errorConfirmedHandler = () => {
-            this.setState({error: null});
-        }
-
-        render () {
-            return (
-                <Aux>
-                    <Modal 
-                        show={this.state.error}
-                        modalClosed={this.errorConfirmedHandler}>
-                        {this.state.error ? this.state.error.message : null}
-                    </Modal>
-                    <WrappedComponent {...this.props} />
-                </Aux>
-            );
-        }
-    }
+componentDidMount () {
+    axios.get( 'https://react-buger-3dcbb.firebaseio.com/ingredients.json' )
+    .then( response => {
+            this.setState( { ingredients: response.data } );
+    } )
+    .catch( error => {
+        this.setState( { error: true } );
+    } );
 }
-
-export default withErrorHandler;
-
 ```
-* in the above wrapper we are catching the common respose error with interceptor.
-* here WrappedComponent is the actual component which using this wapper.ie when we are using this in Builder component before export we have to wrap with this withErrprHandler Hoc as follows
+* But before component mount we should set the ingredients as null, this will cause error.
+* Use burger details as new variable if ingredients loaded we will show or else we will show spinner until ingredients load.
+```js
+let orderSummary = null;
+let burger = this.state.error ? <p>Ingredients can't be loaded!</p> : <Spinner />;
+
+if ( this.state.ingredients ) {
+    burger = (
+        <Aux>
+            <Burger ingredients={this.state.ingredients} />
+            <BuildControls
+                ingredientAdded={this.addIngredientHandler}
+                ingredientRemoved={this.removeIngredientHandler}
+                disabled={disabledInfo}
+                purchasable={this.state.purchasable}
+                ordered={this.purchaseHandler}
+                price={this.state.totalPrice} />
+        </Aux>
+    );
+    orderSummary = <OrderSummary
+        ingredients={this.state.ingredients}
+        price={this.state.totalPrice}
+        purchaseCancelled={this.purchaseCancelHandler}
+        purchaseContinued={this.purchaseContinueHandler} />;
+}
+return (
+    <Aux>
+        <Modal show={this.state.purchasing} modalClosed={this.purchaseCancelHandler}>
+            {orderSummary}
+        </Modal>
+            {burger}  
+    </Aux>
+);
+```
+* In case if you give some wrong URL we won't get any error from interceptor.
+* In GET Request componentWillMount will load before componentDidMount so that it won't catch any error. But this will work fine with POST request.
+* To avoid this issue add catch block to GET request which is inside componentDidMount. then show spinner or common error message...
+
+### Remove Old Interceptor.
+* with error handler method can be wrapped around multiple components.That's the whole idea of having this higher order component.
+* If we add these higher order component with error handler to other components we'll call component will mount again and again.
+* Once we have more pages where we might use with error handler we of course create this instance here multiple times this component here and  so all the   interceptors we set up when we wrapped this around another component which might not be needed anymore still exist. But this is not reqired right??
+* So we have to remove this interceptor when we unmount.
 
 ```js
-import withErrorHandler from '../../hoc/withErrorHandler/withErrorHandler'
-class BurgerBuilder extends Component {
-    ...
+componentWillMount () {
+    this.reqInterceptor = axios.interceptors.request.use(req => {
+        this.setState({error: null});
+        return req;
+    });
+    this.resInterceptor = axios.interceptors.response.use(res => res, error => {
+        this.setState({error: error});
+    });
 }
-export default withErrorHandler(BurgerBuilder,axios);
+componentWillUnmount() {
+    axios.interceptors.request.eject(this.reqInterceptor);
+    axios.interceptors.response.eject(this.resInterceptor);
+}
 ```
-
 
 
 
