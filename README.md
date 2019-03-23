@@ -1,81 +1,58 @@
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-## Get data from Backend
-### Ingredients
-* Now we have to add some ingredients data in firebase DB as new node with some data.
-* Now we got the URL to access ingredients "https://react-buger-3dcbb.firebaseio.com/ingredients"
-```js
-componentDidMount () {
-    axios.get( 'https://react-buger-3dcbb.firebaseio.com/ingredients.json' )
-    .then( response => {
-            this.setState( { ingredients: response.data } );
-    } )
-    .catch( error => {
-        this.setState( { error: true } );
-    } );
-}
-```
-* But before component mount we should set the ingredients as null, this will cause error.
-* Use burger details as new variable if ingredients loaded we will show or else we will show spinner until ingredients load.
+## Checkout Summary
 
-```js
-let orderSummary = null;
-let burger = this.state.error ? <p>Ingredients can not be loaded!</p> : <Spinner />;
+* Lets create a checkout summary
 
-if ( this.state.ingredients ) {
-    burger = (
-        <Aux>
-            <Burger ingredients={this.state.ingredients} />
-            <BuildControls
-                ingredientAdded={this.addIngredientHandler}
-                ingredientRemoved={this.removeIngredientHandler}
-                disabled={disabledInfo}
-                purchasable={this.state.purchasable}
-                ordered={this.purchaseHandler}
-                price={this.state.totalPrice} />
-        </Aux>
+```jsx
+import React from 'react';
+import Burger from '../../Burger/Burger';
+import Button from '../../UI/Button/Button';
+import classes from './CheckoutSummary.css';
+const checkoutSummary = (props) => {
+    return (
+        <div className={classes.CheckoutSummary}>
+            <h1>We hope it tastes well!</h1>
+            <div style={{width: '100%', margin: 'auto'}}>
+                <Burger ingredients={props.ingredients}/>
+            </div>
+            <Button 
+                btnType="Danger"
+                clicked>CANCEL</Button>
+            <Button 
+                btnType="Success"
+                clicked>CONTINUE</Button>
+        </div>
     );
-    orderSummary = <OrderSummary
-        ingredients={this.state.ingredients}
-        price={this.state.totalPrice}
-        purchaseCancelled={this.purchaseCancelHandler}
-        purchaseContinued={this.purchaseContinueHandler} />;
 }
-return (
-    <Aux>
-        <Modal show={this.state.purchasing} modalClosed={this.purchaseCancelHandler}>
-            {orderSummary}
-        </Modal>
-            {burger}  
-    </Aux>
-);
-
+export default checkoutSummary;
 ```
-* In case if you give some wrong URL we won't get any error from interceptor.
-* In GET Request componentWillMount will load before componentDidMount so that it won't catch any error. But this will work fine with POST request.
-* To avoid this issue add catch block to GET request which is inside componentDidMount. then show spinner or common error message...
 
-### Remove Old Interceptor.
-* with error handler method can be wrapped around multiple components.That's the whole idea of having this higher order component.
-* If we add these higher order component with error handler to other components we'll call component will mount again and again.
-* Once we have more pages where we might use with error handler we of course create this instance here multiple times this component here and  so all the   interceptors we set up when we wrapped this around another component which might not be needed anymore still exist. But this is not reqired right??
-* So we have to remove this interceptor when we unmount.
+* Call this checkout summary in checkout.js
 
-```js
-componentWillMount () {
-    this.reqInterceptor = axios.interceptors.request.use(req => {
-        this.setState({error: null});
-        return req;
-    });
-    this.resInterceptor = axios.interceptors.response.use(res => res, error => {
-        this.setState({error: error});
-    });
+```jsx
+import React, { Component } from 'react';
+import CheckoutSummary from '../../components/Order/CheckoutSummary/CheckoutSummary';
+class Checkout extends Component {
+    state = {
+        ingredients: {
+            salad: 1,
+            meat: 1,
+            cheese: 1,
+            bacon: 1
+        }
+    }
+    render() {
+        return (
+            <div>
+                <CheckoutSummary ingredients={this.state.ingredients}/>
+            </div>
+        );
+    }
 }
-componentWillUnmount() {
-    axios.interceptors.request.eject(this.reqInterceptor);
-    axios.interceptors.response.eject(this.resInterceptor);
-}
+export default Checkout;
 ```
+
 
 
 
