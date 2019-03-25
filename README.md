@@ -1,169 +1,310 @@
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-## Checkout Summary
+## Form Component
 
-* Lets create a checkout summary
+* Custom Input component
+
 ```jsx
 import React from 'react';
-import Burger from '../../Burger/Burger';
-import Button from '../../UI/Button/Button';
-import classes from './CheckoutSummary.css';
-const checkoutSummary = (props) => {
+
+import classes from './Input.css';
+
+const input = ( props ) => {
+    let inputElement = null;
+
+    switch ( props.elementType ) {
+        case ( 'input' ):
+            inputElement = <input
+                className={classes.InputElement}
+                {...props.elementConfig}
+                value={props.value}
+                onChange={props.changed} />;
+            break;
+        case ( 'textarea' ):
+            inputElement = <textarea
+                className={classes.InputElement}
+                {...props.elementConfig}
+                value={props.value}
+                onChange={props.changed} />;
+            break;
+        case ( 'select' ):
+            inputElement = (
+                <select
+                    className={classes.InputElement}
+                    value={props.value}
+                    onChange={props.changed}>
+                    {props.elementConfig.options.map(option => (
+                        <option key={option.value} value={option.value}>
+                            {option.displayValue}
+                        </option>
+                    ))}
+                </select>
+            );
+            break;
+        default:
+            inputElement = <input
+                className={classes.InputElement}
+                {...props.elementConfig}
+                value={props.value}
+                onChange={props.changed} />;
+    }
+
     return (
-        <div className={classes.CheckoutSummary}>
-            <h1>We hope it tastes well!</h1>
-            <div style={{width: '100%', margin: 'auto'}}>
-                <Burger ingredients={props.ingredients}/>
-            </div>
-            <Button 
-                btnType="Danger"
-                clicked>CANCEL</Button>
-            <Button 
-                btnType="Success"
-                clicked>CONTINUE</Button>
+        <div className={classes.Input}>
+            <label className={classes.Label}>{props.label}</label>
+            {inputElement}
         </div>
     );
-}
-export default checkoutSummary;
+
+};
+
+export default input;
+```
+* use the defaulyt form in the contact form as below.
+* Include the dynamic generated form from input element
+```jsx
+import Input from '../../../components/UI/Input/Input';
+```
+* Form the order form as below
+```jsx
+state = {
+        orderForm: {
+            name: {
+                elementType: 'input',
+                elementConfig: {
+                    type: 'text',
+                    placeholder: 'Your Name'
+                },
+                value: ''
+            },
+            street: {
+                elementType: 'input',
+                elementConfig: {
+                    type: 'text',
+                    placeholder: 'Street'
+                },
+                value: ''
+            },
+            zipCode: {
+                elementType: 'input',
+                elementConfig: {
+                    type: 'text',
+                    placeholder: 'ZIP Code'
+                },
+                value: ''
+            },
+            country: {
+                elementType: 'input',
+                elementConfig: {
+                    type: 'text',
+                    placeholder: 'Country'
+                },
+                value: ''
+            },
+            email: {
+                elementType: 'input',
+                elementConfig: {
+                    type: 'email',
+                    placeholder: 'Your E-Mail'
+                },
+                value: ''
+            },
+            deliveryMethod: {
+                elementType: 'select',
+                elementConfig: {
+                    options: [
+                        {value: 'fastest', displayValue: 'Fastest'},
+                        {value: 'cheapest', displayValue: 'Cheapest'}
+                    ]
+                },
+                value: ''
+            },
+            radioInput: {
+                elementType: 'input',
+                elementConfig: {
+                    type: 'radio',
+                    placeholder: 'Your radio details',
+                    options: [
+                        {value: 'true', displayValue: 'True'},
+                        {value: 'false', displayValue: 'False'}
+                    ]
+                },
+                value: ''
+            }
+        },
+        loading: false
+    }
 ```
 
-* Call this checkout summary in checkout.js
+* Dynamically create custom form from state value as below
 ```jsx
-import React, { Component } from 'react';
-import CheckoutSummary from '../../components/Order/CheckoutSummary/CheckoutSummary';
-class Checkout extends Component {
-    state = {
-        ingredients: {
-            salad: 1,
-            meat: 1,
-            cheese: 1,
-            bacon: 1
+render () {
+        // Creating formElementsArray from state object
+        const formElementsArray = [];
+        for (let key in this.state.orderForm) {
+            formElementsArray.push({
+                id: key,
+                config: this.state.orderForm[key]
+            });
         }
-    }
-    render() {
+        // Dynamically creating forms from looping the above array.
+        let form = (
+            <form onSubmit={this.orderHandler}>
+                {formElementsArray.map(formElement => (
+                    <Input 
+                        key={formElement.id}
+                        elementType={formElement.config.elementType}
+                        elementConfig={formElement.config.elementConfig}
+                        value={formElement.config.value}
+                        changed={(event) => this.inputChangedHandler(event, formElement.id)} />
+                ))}
+                <Button btnType="Success">ORDER</Button>
+            </form>
+        );
+        if ( this.state.loading ) {
+            form = <Spinner />;
+        }
         return (
-            <div>
-                <CheckoutSummary ingredients={this.state.ingredients}/>
+            <div className={classes.ContactData}>
+                <h4>Enter your Contact Data</h4>
+                {form}
             </div>
         );
     }
-}
-export default Checkout;
 ```
-* We can render this in app js below burger builder, but we will show either burger builder or checkout conatiner at a time. 
+* Onchange Listener 
 ```jsx
-class App extends Component {
-    render() {
-        return (
-            <div>
-            <Layout>
-                <BurgerBuilder/>
-                <Checkout />
-            </Layout>
-            </div>
-        );
+inputChangedHandler = (event, inputIdentifier) => {
+    //cloned - updatedOrderForm are name , street ,zipcode ... which is same as inputIdentifier
+    const updatedOrderForm = {
+        ...this.state.orderForm
+    };
+    //deepcloned - updatedFormElement are elementType, elementConfig and value ... ie deep clone
+    const updatedFormElement = { 
+        ...updatedOrderForm[inputIdentifier]
+    };
+    // here we are assigning the values to the updatedFormElement.value  ie  cloned array's value whch is inside name or street or zipcode...
+    updatedFormElement.value = event.target.value;
+    // Now the updated object/array is assigned to the orderForm's child ie name, street,zipcode ...
+    updatedOrderForm[inputIdentifier] = updatedFormElement;
+    //Finally we are setting the state object.
+    this.setState({orderForm: updatedOrderForm});
+}
+```
+* Order submit  Handler
+```jsx
+orderHandler = ( event ) => {
+    //To avoid default behaviour of page reload.. we are using event.preventDefault();
+    event.preventDefault();
+    this.setState( { loading: true } );
+    const formData = {};
+    for (let formElementIdentifier in this.state.orderForm) {
+        formData[formElementIdentifier] = this.state.orderForm[formElementIdentifier].value;
     }
-}
-```
-* Install React router dom for adding routing to the app.js
-```js
-npm install --save react-router-dom
-```
-* Now we have to wrap our entire app component (index.js) with browser component to enable routing.
-```jsx
-import { BrowserRouter } from 'react-router-dom';
-
-const app = (
-    <BrowserRouter>
-        <App />
-    </BrowserRouter>
-);
-
-ReactDOM.render(app, document.getElementById('root'));
-```
-
-* Now we can use the routing in app.js component 
-
-```jsx
-import { Route, Switch } from 'react-router-dom';
-
-class App extends Component {
-    render() {
-    return (
-        <div>
-        <Layout>
-            <Switch>
-            <Route path="/checkout" component={Checkout} />
-            <Route path="/" exact component={BurgerBuilder} />
-            </Switch>
-        </Layout>
-        </div>
-    );
+    //formData - new order array formed from orderForm
+    const order = {
+        ingredients: this.props.ingredients,
+        price: this.props.price,
+        orderData: formData
     }
+    axios.post( '/orders.json', order )
+        .then( response => {
+            this.setState( { loading: false } );
+            this.props.history.push( '/' );
+        } )
+        .catch( error => {
+            this.setState( { loading: false } );
+        } );
 }
 ```
-* Navigating to checkout page from handler function after submit.
-```jsx
-this.props.history.push('/checkout');
-```
-* Now the router only available to the parent component rest of the child component we have to use HOC as below to use router
-```jsx
-import { withRouter } from 'react-router-dom';
-...
-....
-export default withRouter(burger);
-```
-* Now you will see the router has the match location and history details.... on console props...
+### Validation
 
-* Navigating to Back previous page and To Next page.
+* Custom Validations - validity rules in state's orderForm
 ```jsx
-checkoutCancelledHandler = () => {
-    this.props.history.goBack();
-}
-
-checkoutContinuedHandler = () => {
-    this.props.history.replace('/checkout/contact-data');
-}
-```
-* Passing data via Query Params
-```jsx
-const queryParams = [];
-for (let i in this.state.ingredients) {
-    queryParams.push(encodeURIComponent(i) + '=' + encodeURIComponent(this.state.ingredients[i]));
-}
-const queryString = queryParams.join('&');
-this.props.history.push({
-    pathname: '/checkout',
-    search: '?' + queryString
-});
-```
-
-* Navigating to new component and loading in the same page below the other component without refreshing the old component.
-
-```jsx
-import { Route } from 'react-router-dom';
-...
-...
-<Route 
-    path={this.props.match.path + '/contact-data'} 
-    render={(props) => (<ContactData ingredients={this.state.ingredients} price={this.state.totalPrice} {...props} />)} />
-```
-* here we are rendering and passinh  prpos to ContactData component.
-
-* Implementing Navigation Link - when using routing..
-* from
-```jsx
-<a 
-            href={props.link} 
-            className={props.active ? classes.active : null}>{props.children}</a>
-```
-* To
-```jsx
-import { NavLink } from 'react-router-dom';
-<NavLink 
-        to={props.link}
-        exact={props.exact}
-        activeClassName={classes.active}>{props.children}</NavLink>
+state = {
+        orderForm: {
+            name: {
+                elementType: 'input',
+                elementConfig: {
+                    type: 'text',
+                    placeholder: 'Your Name'
+                },
+                value: '',
+                validation: {
+                    required: true
+                },
+                valid: false,
+                touched: false
+            },
+            street: {
+                elementType: 'input',
+                elementConfig: {
+                    type: 'text',
+                    placeholder: 'Street'
+                },
+                value: '',
+                validation: {
+                    required: true
+                },
+                valid: false,
+                touched: false
+            },
+            zipCode: {
+                elementType: 'input',
+                elementConfig: {
+                    type: 'text',
+                    placeholder: 'ZIP Code'
+                },
+                value: '',
+                validation: {
+                    required: true,
+                    minLength: 5,
+                    maxLength: 5
+                },
+                valid: false,
+                touched: false
+            },
+            country: {
+                elementType: 'input',
+                elementConfig: {
+                    type: 'text',
+                    placeholder: 'Country'
+                },
+                value: '',
+                validation: {
+                    required: true
+                },
+                valid: false,
+                touched: false
+            },
+            email: {
+                elementType: 'input',
+                elementConfig: {
+                    type: 'email',
+                    placeholder: 'Your E-Mail'
+                },
+                value: '',
+                validation: {
+                    required: true
+                },
+                valid: false,
+                touched: false
+            },
+            deliveryMethod: {
+                elementType: 'select',
+                elementConfig: {
+                    options: [
+                        {value: 'fastest', displayValue: 'Fastest'},
+                        {value: 'cheapest', displayValue: 'Cheapest'}
+                    ]
+                },
+                value: '',
+                valid: true
+            }
+        },
+        formIsValid: false,
+        loading: false
+    }
 ```
 
 
