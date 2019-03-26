@@ -1,226 +1,10 @@
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-## Form Component
-
-* Custom Input component
-
-```jsx
-import React from 'react';
-
-import classes from './Input.css';
-
-const input = ( props ) => {
-    let inputElement = null;
-
-    switch ( props.elementType ) {
-        case ( 'input' ):
-            inputElement = <input
-                className={classes.InputElement}
-                {...props.elementConfig}
-                value={props.value}
-                onChange={props.changed} />;
-            break;
-        case ( 'textarea' ):
-            inputElement = <textarea
-                className={classes.InputElement}
-                {...props.elementConfig}
-                value={props.value}
-                onChange={props.changed} />;
-            break;
-        case ( 'select' ):
-            inputElement = (
-                <select
-                    className={classes.InputElement}
-                    value={props.value}
-                    onChange={props.changed}>
-                    {props.elementConfig.options.map(option => (
-                        <option key={option.value} value={option.value}>
-                            {option.displayValue}
-                        </option>
-                    ))}
-                </select>
-            );
-            break;
-        default:
-            inputElement = <input
-                className={classes.InputElement}
-                {...props.elementConfig}
-                value={props.value}
-                onChange={props.changed} />;
-    }
-
-    return (
-        <div className={classes.Input}>
-            <label className={classes.Label}>{props.label}</label>
-            {inputElement}
-        </div>
-    );
-
-};
-
-export default input;
-```
-* use the defaulyt form in the contact form as below.
-* Include the dynamic generated form from input element
-```jsx
-import Input from '../../../components/UI/Input/Input';
-```
-* Form the order form as below
-```jsx
-state = {
-        orderForm: {
-            name: {
-                elementType: 'input',
-                elementConfig: {
-                    type: 'text',
-                    placeholder: 'Your Name'
-                },
-                value: ''
-            },
-            street: {
-                elementType: 'input',
-                elementConfig: {
-                    type: 'text',
-                    placeholder: 'Street'
-                },
-                value: ''
-            },
-            zipCode: {
-                elementType: 'input',
-                elementConfig: {
-                    type: 'text',
-                    placeholder: 'ZIP Code'
-                },
-                value: ''
-            },
-            country: {
-                elementType: 'input',
-                elementConfig: {
-                    type: 'text',
-                    placeholder: 'Country'
-                },
-                value: ''
-            },
-            email: {
-                elementType: 'input',
-                elementConfig: {
-                    type: 'email',
-                    placeholder: 'Your E-Mail'
-                },
-                value: ''
-            },
-            deliveryMethod: {
-                elementType: 'select',
-                elementConfig: {
-                    options: [
-                        {value: 'fastest', displayValue: 'Fastest'},
-                        {value: 'cheapest', displayValue: 'Cheapest'}
-                    ]
-                },
-                value: ''
-            },
-            radioInput: {
-                elementType: 'input',
-                elementConfig: {
-                    type: 'radio',
-                    placeholder: 'Your radio details',
-                    options: [
-                        {value: 'true', displayValue: 'True'},
-                        {value: 'false', displayValue: 'False'}
-                    ]
-                },
-                value: ''
-            }
-        },
-        loading: false
-    }
-```
-
-* Dynamically create custom form from state value as below
-```jsx
-render () {
-        // Creating formElementsArray from state object
-        const formElementsArray = [];
-        for (let key in this.state.orderForm) {
-            formElementsArray.push({
-                id: key,
-                config: this.state.orderForm[key]
-            });
-        }
-        // Dynamically creating forms from looping the above array.
-        let form = (
-            <form onSubmit={this.orderHandler}>
-                {formElementsArray.map(formElement => (
-                    <Input 
-                        key={formElement.id}
-                        elementType={formElement.config.elementType}
-                        elementConfig={formElement.config.elementConfig}
-                        value={formElement.config.value}
-                        changed={(event) => this.inputChangedHandler(event, formElement.id)} />
-                ))}
-                <Button btnType="Success">ORDER</Button>
-            </form>
-        );
-        if ( this.state.loading ) {
-            form = <Spinner />;
-        }
-        return (
-            <div className={classes.ContactData}>
-                <h4>Enter your Contact Data</h4>
-                {form}
-            </div>
-        );
-    }
-```
-* Onchange Listener 
-```jsx
-inputChangedHandler = (event, inputIdentifier) => {
-    //cloned - updatedOrderForm are name , street ,zipcode ... which is same as inputIdentifier
-    const updatedOrderForm = {
-        ...this.state.orderForm
-    };
-    //deepcloned - updatedFormElement are elementType, elementConfig and value ... ie deep clone
-    const updatedFormElement = { 
-        ...updatedOrderForm[inputIdentifier]
-    };
-    // here we are assigning the values to the updatedFormElement.value  ie  cloned array's value whch is inside name or street or zipcode...
-    updatedFormElement.value = event.target.value;
-    // Now the updated object/array is assigned to the orderForm's child ie name, street,zipcode ...
-    updatedOrderForm[inputIdentifier] = updatedFormElement;
-    //Finally we are setting the state object.
-    this.setState({orderForm: updatedOrderForm});
-}
-```
-* Order submit  Handler
-```jsx
-orderHandler = ( event ) => {
-    //To avoid default behaviour of page reload.. we are using event.preventDefault();
-    event.preventDefault();
-    this.setState( { loading: true } );
-    const formData = {};
-    for (let formElementIdentifier in this.state.orderForm) {
-        formData[formElementIdentifier] = this.state.orderForm[formElementIdentifier].value;
-    }
-    //formData - new order array formed from orderForm
-    const order = {
-        ingredients: this.props.ingredients,
-        price: this.props.price,
-        orderData: formData
-    }
-    axios.post( '/orders.json', order )
-        .then( response => {
-            this.setState( { loading: false } );
-            this.props.history.push( '/' );
-        } )
-        .catch( error => {
-            this.setState( { loading: false } );
-        } );
-}
-```
 ### Validation
 
 * Custom Validations - validity rules in state's orderForm
 ```jsx
+// Here we are setting valid false initially.
 state = {
         orderForm: {
             name: {
@@ -234,6 +18,7 @@ state = {
                     required: true
                 },
                 valid: false,
+                //Only if the elememt touched we have to check the validation. so initially it should be false.
                 touched: false
             },
             street: {
@@ -306,7 +91,148 @@ state = {
         loading: false
     }
 ```
+* 
+```jsx
+//her we will check our rules valid or not.
+checkValidity(value, rules) {
+    // Here we are checking the rules one by one, so in-case if last rule alone true others are false also it will work as valid value ie true for isValid
+    // To avoid this we are setting the initial isValid as true and then we are checking wheather all the previous conditions also true by adding isValid also with the other condition
+    // This will make sure that all the rules are statisfied.
+    let isValid = true;
+    
+    if (rules.required) {
+        isValid = value.trim() !== '' && isValid;
+    }
 
+    if (rules.minLength) {
+        isValid = value.length >= rules.minLength && isValid
+    }
+
+    if (rules.maxLength) {
+        isValid = value.length <= rules.maxLength && isValid
+    }
+
+    return isValid;
+}
+```
+* Calling check validity - inputChangedHandler
+```jsx
+// here since input changed so we are setting element touched 
+updatedFormElement.touched = true;
+updatedFormElement.valid = this.checkValidity(updatedFormElement.value, updatedFormElement.validation);
+```
+
+* Pass the invalid details to the input component
+```jsx
+<Input 
+    key={formElement.id}
+    elementType={formElement.config.elementType}
+    elementConfig={formElement.config.elementConfig}
+    value={formElement.config.value}
+    //here we are getting invalid props
+    invalid={!formElement.config.valid}
+    // Only the element that has validation rules alone need to check valid or not 
+    shouldValidate={formElement.config.validation}
+    // Passing the touched param to the Input component.
+    touched={formElement.config.touched}
+    changed={(event) => this.inputChangedHandler(event, formElement.id)} />
+```
+* Based on these props we need to do some css changes
+```jsx
+const inputClasses = [classes.InputElement];
+
+if (props.invalid && props.shouldValidate && props.touched) {
+    inputClasses.push(classes.Invalid);
+}
+```
+* Applying invalid class with existing input class.
+```jsx
+className={inputClasses.join(' ')}
+```
+* We're not showing any error messages in our form, but you can of course easily add some.
+* The form inputs (```<Input />```  component) already receives the information whether it's invalid or not. You could of course easily add some conditionally rendered element inside of that component.
+* For example (inside ```<Input />```  component function):
+
+```jsx
+let validationError = null;
+if (props.invalid && props.touched) {
+    validationError = <p>Please enter a valid value!</p>;
+}
+return (
+    <div className={classes.Input}>
+        <label className={classes.Label}>{props.label}</label>
+        {inputElement}
+        {validationError}
+    </div>
+);
+```
+* This could of course be finetuned. You could also pass the value type (e.g. "email address" ) as a prop:
+```jsx
+validationError = <p>Please enter a valid {props.valueType}</p>; 
+```
+* You could also receive the complete error message as a prop:
+```jsx
+validationError = <p>{props.errorMessage}</p>; 
+```
+* And of course, also don't forget to style the messages if you want to do that:
+```jsx
+validationError = <p className={classes.ValidationError}>{props.errorMessage}</p>;
+```
+```css
+.ValidationError {
+    color: red;
+    margin: 5px 0;
+} 
+```
+
+### Overall Form Validity
+
+* we have to check all elements are valid ie overall form validity.(inputChangedHandler)
+
+```jsx
+let formIsValid = true;
+for (let inputIdentifier in updatedOrderForm) {
+    formIsValid = updatedOrderForm[inputIdentifier].valid && formIsValid;
+}
+this.setState({orderForm: updatedOrderForm, formIsValid: formIsValid});
+```
+* based on that formIsValid we have to disable order button
+```jsx
+<Button btnType="Success" disabled={!this.state.formIsValid}>ORDER</Button>
+```
+* Since Button is our custom component we have to send the props to the button component
+```jsx
+<button
+        disabled={props.disabled}
+        onClick={props.clicked}>{props.children}</button>
+```
+### Error - TypeError: Cannot read property 'required' of undefined
+* Since dropdown don't have validation object we are getting this error , we can avoid this by adding empty validation object
+```jsx
+deliveryMethod: {
+    elementType: 'select',
+    elementConfig: {
+        options: [
+            {value: 'fastest', displayValue: 'Fastest'},
+            {value: 'cheapest', displayValue: 'Cheapest'}
+        ]
+    },
+    validation: {},
+    value: '',
+    valid: true
+}
+```
+* Second approach - if rules ie validation not set simply return true.
+```jsx
+checkValidity(value, rules) {
+        let isValid = true;
+        if (!rules) {
+            return true;
+        }
+        ...
+        ...
+}
+```
 
 
 
