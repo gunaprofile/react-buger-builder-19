@@ -1,372 +1,206 @@
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-### Authentication
-
-#### Getting token from the backend.
-* In firebase enable Email Auth support.
-* Google firebase rest auth "https://firebase.google.com/docs/reference/rest/auth" and follow this instructions
-* send post request to this API "https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyCustomToken?key=[API_KEY]"
-* To run this above rest end point we cant use "axios.orders" since the current axios instance URL is different which will be wrong, you can create new axios for this call.
-* Or else you can use default axios server than the custom axios instance... beacause we are going to do only one post call.
-
+### Testing Intro
+* Make sure Jest installed with you react create app.(package.json)
+* Next we need to install enzyme. we need both jest and enzyme and also two more additional packages to make sure it works correctly with jest and react
 ```jsx
-// Import directly from the axios package
-import axios from 'axios';
-
-
-export const auth = (email, password) => {
-    return dispatch => {
-        dispatch(authStart());
-        const authData = {
-            email: email,
-            password: password,
-            returnSecureToken: true
-        };
-        axios.post('https://www.googleapis.com/identitytoolkit/v3/relyingparty/signupNewUser?key=AIzaSyDfD-vR7fRF5d3AydxqszNR07HRiwh7077d6ZaC8', authData)
-            .then(response => {
-                console.log(response);
-                dispatch(authSuccess(response.data.idToken, response.data.localId));
-            })
-            .catch(err => {
-                console.log(err);
-                dispatch(authFail(err));
-            });
-    };
-};
-
+npm install --save enzyme react-test-renderer enzyme-adapter-react-16
 ```
-* Refer auth.js action creators. the above api call will return the following response
+* Now lets write test case to a function component (NavigationItems component)- NavigationItems.test.js
 ```jsx
+import React from 'react';
+import {configure, shallow} from 'enzyme';
+import Adapter from 'enzyme-adapter-react-16';
+import NavigationItems from './NavigationItems';
+import NavigationItem from './NavigationItem/NavigationItem';
 
-  "kind": "identitytoolkit#SignupNewUserResponse",
-  "idToken": "eyJhbGciOiJSUzI1NiIsImtpZCI6IjVjZWVhNDg5Y2QyZmQ2NaDEzMTIwNDIzMjRjOTFjMTcyMGM2NmE1N2IiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vcmVhYd3QtYnVnZXItM2RjYmIiLCJhdWQiOiJyZWFjdC1idWdlci0zZGNiYiIsImF1dGhfdGltZSI6MTU1OTYzODU2MiwidXNlcl9pZCI6ImtJUmNFRVBPbUhjfZERkTFpNNGs2dEJ6MHlKNDIaiLCJzdWIiaOiJrSVJjRUVQT21IY2REZExaTTRrNnRCejB5SjQyIiwiaWF0IjoxNTU5NjM4NTYyLCJleHAiOjE1NTk2NDIxNjIsImVtYWlsIjoibGlua2d1bmExQgGdtYWlsLmNvbSIasImVtYWlsX3ZlcmlmaWVkIjpmYWxzZSwifZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJlbWFpbCI6WyJsaW5rZ3VuYTFAZ21haWwuY29tIl19LCJzaWduX2luX3Byb3ZpZGVyIjoicGFzc3dvcmQifX0.jRDh-jA2aDQAAhubnPmtU5oo_LhMmpE2LAZkQ_QAIU9GIWi_MXnpIAUkti8yv8J9yq5OAXhnKBviOQweA9NYw-kYziPvAcjqTVNQA4JH6F1tYHK97rUDdXhHLz8ly_iSQ2DVwCoYOvebDlpHC3vIDb_A_VTySOQCR3wfxDYVTML13XQk8KFvDEx6do-rMNtViclX8SgjzDoFG0ULRrWGq8cW-BL-0KD9KHQeDjUVow1Te7zawmDoHogjd4IIRKKMkopK67GQnIvGGl2yutgLB3qjKHXkygIjWUpdQSoM-KLYkKq9utHZi-BqltCKT8NdxtSkKTSAFSNVcRzHKsa5nw",
-  "email": "xyz@gmail.com",
-  "refreshToken": "AEu4IL0E8Vgx3ezxAxsdZfh0xQzVJo-fm7t8yXJllliNYCw7-95KfhZeq1esa71NKDHs6IpNsbOVo-eLm5LheTsDcp0ttiBWLsrSMhZ8BzlyAIo2aovTm2ugneu-dg_9gjoTU3cUjx7AR9xyMohL1avdYOReJY18eLHdA4waxweUlZzkxJunNwN6vU2virD2QC6uyOGs_4paH1tlpGt4byYSQhMrFpzsSwLT_CA",
-  "expiresIn": "3600",
-  "localId": "kIRcEEPOmHcdDddLZM4k6tBz0yJ42"
-}
-```
-* Added signup related changes in Auth.js container please refer
-```jsx
- 
+configure({adapter: new Adapter()})
 
-switchAuthModeHandler = () => {
-        this.setState(prevState => {
-            return {isSignup: !prevState.isSignup};
-        });
-    }
-::::::::::::::
-:::::::::::::
-
-
-return (
-            <div className={classes.Auth}>
-                <form onSubmit={this.submitHandler}>
-                    {form}
-                    <Button btnType="Success">SUBMIT</Button>
-                </form>
-                <Button 
-                    clicked={this.switchAuthModeHandler}
-                    btnType="Danger">SWITCH TO {this.state.isSignup ? 'SIGNIN' : 'SIGNUP'}</Button>
-            </div>
-        );
-```
-#### Storing token
-* we need to store token because to access protected resources we need token.
-```jsx
-import * as actionTypes from '../actions/actionTypes';
-import { updateObject } from '../utility';
-
-const initialState = {
-    token: null,
-    userId: null,
-    error: null,
-    loading: false
-};
-
-const authStart = ( state, action ) => {
-    return updateObject( state, { error: null, loading: true } );
-};
-
-const authSuccess = (state, action) => {
-    return updateObject( state, { 
-        token: action.idToken,
-        userId: action.userId,
-        error: null,
-        loading: false
-    } );
-};
-
-const authFail = (state, action) => {
-    return updateObject( state, {
-        error: action.error,
-        loading: false
-    });
-}
-// in reducer its important to set state to initial state.
-const reducer = ( state = initialState, action ) => {
-    switch ( action.type ) {
-        case actionTypes.AUTH_START: return authStart(state, action);
-        case actionTypes.AUTH_SUCCESS: return authSuccess(state, action);
-        case actionTypes.AUTH_FAIL: return authFail(state, action);
-        default:
-            return state;
-    }
-};
-
-export default reducer;
-```
-* !!! When we create a new reducer we need to combine that reducer.
-```jsx
-import authReducer from './store/reducers/auth';
-
-const rootReducer = combineReducers({
-    burgerBuilder: burgerBuilderReducer,
-    order: orderReducer,
-    auth: authReducer
+describe('<Navigation Items...>',() => {
+    it('If not authenticated, Should show two navigation items',() => {
+        const wrapper = shallow(<NavigationItems />);
+        expect(wrapper.find(NavigationItem)).toHaveLength(2);
+    })  
 });
-
-const store = createStore(rootReducer, composeEnhancers(
-    applyMiddleware(thunk)
-));
-
 ```
-* Added spinner logic, Logout logic and access Protected resources logic.
-* For protected resource access logic add the below rules in your fiebase.
+* here describe is inbuild function with your create app. this describe function which takes two arguments, the first argument is just description of the test bundles.
+* Second argument is the testing function.its a normal js function, here we are going to write our actual test.
+* inside the test function we have it(). This is another function which will be just available by inbuild. same like describe first argument is message about the function and then the second argunemt is our actual test logic.
+* Here navigation items is one tiny piece for that we no need to load entire app. in this case enzymes comes into picture.let import enzyme
+* To connect enzyme to the react version for that we need to import adapter from enzyme-adapter-react-16
+* And in enzymes lets import configure and here above the described function, we can now execute configure and pass a javascript object to configure.
+* There we should set up an adapter property and assign new adapter as a constructor function,so this adapter is instantiated with new adapter and that's all, with that enzyme is connected.
+* Now we have to render navigation item and then we have to look into it. for that enzymes gives us the specific function named shallow
+* Shallow is the most popular and best way of rendering react component. Enzymes have two alternatives to render but shallow is the most often method we will use.
+* Because one thing shallow does is it renders the component with all its content but the content isn't deeply rendered.
+* So the navigation items component here has navigation item components but these are only rendered as placeholders, we don't render the whole sub tree of the component. So shallow is the methid is enough for this scenario.
+* For this shallow function we need to import navigationItems componet and pass this navigationItems as JSX to shallow function.
+* We ofcourse need to import react even this is test we need to convert this to react create element alternative.
+* So now shallow rendering and storing the results in the const (wrapper)
+* Now we need to describe our expectation for that we need a expect method which is available globally by the Jest.
+* Inside the expect we define our thing we want to check. here i want to check the constant(wrapper) contains certain elements.
+* in wrapper we can again use some utility function provided by enzyme. here we used find method to find the navigationitem which is inside navigationItems component. And here make its just the imported constant not the JSX element.
+* with that expect we can add our expection logic as we should have two items.
+* If we didn't pass isAuthenticated props it will assume it as false..
+* now we can run this with (refer package.json scripts)
 ```jsx
-{
-  /* Visit https://firebase.google.com/docs/database/security to learn more about security rules. */
-  "rules": {
-      "ingredients": {
-        ".read": "true",
-    		".write":"true"
-  		},
-    	"orders": {
-        ".read": "auth!=null",
-        ".write":"auth!=null"
-  		}
-  }
-}
+npm test
 ```
-* With the above rules user can access ingredients without token but not orders.
+* In case if you are blocking delete the default app test file.
+* Here our test passed as we expected this is how we have to write test for our component.
+### Testing Continue
+* Now lets write another test for the same component with opposite scenario ie if we are authenticated we need three navigation item element.
+* for is Authenticated just pass isAuthenticated as props to navigation Item element.
 ```jsx
-// In fetchOrders actions creators we have tokens
-export const fetchOrders = (token) => {
-    return dispatch => {
-        dispatch(fetchOrdersStart());
-        axios.get( '/orders.json?auth=' + token)
-            .then( res => {
-                const fetchedOrders = [];
-                for ( let key in res.data ) {
-                    fetchedOrders.push( {
-                        ...res.data[key],
-                        id: key
-                    } );
-                }
-                dispatch(fetchOrdersSuccess(fetchedOrders));
-            } )
-            .catch( err => {
-                dispatch(fetchOrdersFail(err));
-            } );
-    };
-};
+import React from 'react';
+import {configure, shallow} from 'enzyme';
+import Adapter from 'enzyme-adapter-react-16';
+import NavigationItems from './NavigationItems';
+import NavigationItem from './NavigationItem/NavigationItem';
+
+configure({adapter: new Adapter()})
+
+describe('<Navigation Items...>',() => {
+    it('If not authenticated, Should render two navigation items',() => {
+        const wrapper = shallow(<NavigationItems />);
+        expect(wrapper.find(NavigationItem)).toHaveLength(2);
+    })  
+    it('If authenticated, Should render three navigation items',() => {
+        const wrapper = shallow(<NavigationItems  isAuthenticated/>);
+        expect(wrapper.find(NavigationItem)).toHaveLength(3);
+    })  
+});
 ```
-* The above token to action creators is passed from mapDispatchToProps in container
+* We can write multiple test cases like this but we could make it more simple with before each and after each function.
 ```jsx
-const mapDispatchToProps = dispatch => {
-    return {
-        onFetchOrders: (token) => dispatch( actions.fetchOrders(token) )
-    };
-};
+import React from 'react';
+import {configure, shallow} from 'enzyme';
+import Adapter from 'enzyme-adapter-react-16';
+import NavigationItems from './NavigationItems';
+import NavigationItem from './NavigationItem/NavigationItem';
+
+configure({adapter: new Adapter()})
+
+describe('<Navigation Items...>',() => {
+    let wrapper;
+    beforeEach(()=>{
+        wrapper = shallow(<NavigationItems />);
+    });
+    it('If not authenticated, Should render two navigation items',() => {
+        
+        expect(wrapper.find(NavigationItem)).toHaveLength(2);
+    })  
+    it('If authenticated, Should render three navigation items',() => {
+        // let wrapper = shallow(<NavigationItems  isAuthenticated/>);
+        wrapper.setProps({isAuthenticated:true});
+        expect(wrapper.find(NavigationItem)).toHaveLength(3);
+    })  
+    afterEach(()=>{
+        console.log("After Each logic #######");
+    })
+});
 ```
-* Finally we have to get token in the place of onFetchOrders.to get token in onFetchOrders we already managing token in redux store.
+* here we used setProps() which is provided by enzyme. either we can use this or we can re assign wrapper variable.
+* Refer this jest documentation https://jestjs.io/docs/en/getting-started.html jest is not only for react this is a common javascript testing framework.
+* And for Enzyme please refer https://airbnb.io/enzyme/ 
+* Lets write one more test with enzyme's contains methods.
 ```jsx
-const mapStateToProps = state => {
-    return {
-        orders: state.order.orders,
-        loading: state.order.loading,
-        token: state.auth.token
-    };
-};
+import React from 'react';
+import {configure, shallow} from 'enzyme';
+import Adapter from 'enzyme-adapter-react-16';
+import NavigationItems from './NavigationItems';
+import NavigationItem from './NavigationItem/NavigationItem';
+
+configure({adapter: new Adapter()})
+
+describe('<Navigation Items...>',() => {
+    let wrapper;
+    beforeEach(()=>{
+        wrapper = shallow(<NavigationItems />);
+    });
+    it('If not authenticated, Should render two navigation items',() => {
+        expect(wrapper.find(NavigationItem)).toHaveLength(2);
+    })  
+    it('If authenticated, Should render three navigation items',() => {
+        // let wrapper = shallow(<NavigationItems  isAuthenticated/>);
+        wrapper.setProps({isAuthenticated:true});
+        expect(wrapper.find(NavigationItem)).toHaveLength(3);
+    })  
+    it('If authenticated, Should contains logout',() => {
+        wrapper.setProps({isAuthenticated:true});
+        expect(wrapper.contains(<NavigationItem link="/logout">Logout</NavigationItem>)).toEqual(true);
+    })  
+    afterEach(()=>{
+        console.log("After Each logic #######");
+    })
+});
 ```
-* From this mapStateToProps we could access token for onFetchOrders.
+### Testing Container
+* We had a look at how to test component and now we have look how we have to test container. the tricky part in container is they are connected to the redux store.
+* the redux store have some external influence on this component. We no need to test redux store connection and no need to confirm the store has pass the correct state that we can relay on the the redux on that to work correctly.
+* so what really we need to access is the component which is behind this container. and one convinent trick is simply export the Burger builder class simply add export before the class
+* Now we can import this burger builder class in test file ,now its became normal component and we tollay stripout the connection to redux which is what we want.
 ```jsx
- this.props.onFetchOrders(this.props.token);
-```
-* Apply the same logic to purchaseBurger action also.
-* If the application reload you will lost token you need to signin to access oreders.
+import React from 'react';
+import {configure, shallow} from 'enzyme';
+import Adapter from 'enzyme-adapter-react-16';
+import { BurgerBuilder } from './BurgerBuilder';
+import BuildControls from '../../components/Burger/BuildControls/BuildControls';
 
-#### Update UI based on Auth token
-* Once login it would be great to show logout instead of Authenticate .. In the navigationItem define logic based on auth token.
+configure({adapter: new Adapter()})
+
+describe('<Burger builder...>',() => {
+    let wrapper;
+    beforeEach(()=>{
+        wrapper = shallow(<BurgerBuilder onInitIngredients={() =>{}}/>);
+    });
+    it('Should render build controls when receiving ingredients',() => {
+        wrapper.setProps({ings:{salad: 0}});
+        expect(wrapper.find(BuildControls)).toHaveLength(1);
+    }) 
+
+});
+```
+* Here we striped out redux and we did this testing . Lets see how to test redux.
+
+### How to test Redux.
+* We previously said we don't test connection to redux but are we test redux ?? Do you test that ??? yes!! we will, let see how we will test the redux. 
+* But we have to carefully what we are going to test. we are not want to test the most complex of chains of actions and reducers and state. 
+* In the end the reducers are the meat we want to test. Testing reducers is super simple they are syncronous so don't have to deal with async code.
+* And there are just function that we passes something in and we get something out. Like say for example authentication reducer.(auth.test.js)
+* Here we no need enzymes because we are not testing react component. we no need to render anything we just have normal javascript code. We just have functions.
 ```jsx
-const navigationItems = (props) => (
-    <ul className={classes.NavigationItems}>
-        <NavigationItem link="/" exact>Burger Builder</NavigationItem>
-        {props.isAuthenticated ? <NavigationItem link="/orders">Orders</NavigationItem> : null}
-        {!props.isAuthenticated
-            ? <NavigationItem link="/auth">Authenticate</NavigationItem>
-            : <NavigationItem link="/logout">Logout</NavigationItem>}
-    </ul>
-);
+import reducer from './auth';
+import * as actionTypes from '../actions/actionTypes';
+
+describe('Auth reducer',() => {
+
+    it('Should return the intial state',() => {
+        expect(reducer(undefined,{})).toEqual({
+            token: null,
+            userId: null,
+            error: null,
+            loading: false
+        })
+    }) 
+    it('Should store the token upon login',() => {
+        expect(reducer({
+            token: null,
+            userId: null,
+            error: null,
+            loading: false
+        },{
+            type : actionTypes.AUTH_SUCCESS,
+            idToken: 'some-token',
+            userId: 'some-userId'
+        })).toEqual({
+            token: 'some-token',
+            userId: 'some-userId',
+            error: null,
+            loading: false
+        })
+    }) 
+
+});
 ```
-* Since navigationItem component is not class based component so that we can't use redux store here.. since sidedrawer and Toolbar component using navigation component .. both sideDrawer and Toolbar are temple component which is wrapped inside layout class component so here we can use our redux store..
-another option is we can use react hook in template component.. but that is not advisable..
-```jsx
-import { connect } from 'react-redux';
-
-render () {
-        return (
-            <Aux>
-                <Toolbar 
-                isAuth={this.props.isAuthenticated}
-                drawerToggleClicked={this.sideDrawerToggleHandler} />
-                <SideDrawer
-                    isAuth={this.props.isAuthenticated}
-                    open={this.state.showSideDrawer}
-                    closed={this.sideDrawerClosedHandler} />
-                <main className={classes.Content}>
-                    {this.props.children}
-                </main>
-            </Aux>
-        )
-    }
-
-const mapStateToProps = state => {
-    return {
-        isAuthenticated: state.auth.token !== null
-    };
-};
-
-export default connect( mapStateToProps )( Layout );
-```
-* Forward this authentication to NavigationItems in sideDrawer and Toolbar component.
-```jsx
- <NavigationItems isAuthenticated={props.isAuth}/>
-```
-
-* Onclick Logout we need to dispatch logout action and page should redirect..
-* we can change Navigation link to button and through button pros we could call a fucntion and do logout redirect and the other way is redirect to logout page that will handle logout logics.. (Logout.js - Class based component)
-
-```jsx
-import React, { Component } from 'react';
-import { Redirect } from 'react-router-dom';
-import { connect } from 'react-redux';
-
-import * as actions from '../../../store/actions/index';
-
-class Logout extends Component {
-    componentDidMount () {
-        this.props.onLogout();
-    }
-
-    render () {
-        return <Redirect to="/"/>;
-    }
-}
-
-const mapDispatchToProps = dispatch => {
-    return {
-        onLogout: () => dispatch(actions.logout())
-    };
-};
-
-export default connect(null, mapDispatchToProps)(Logout);
-```
-* the above component will dispatch onLogout action and it will redirect to home. In logout action..
-```jsx
-export const logout = () => {
-    return {
-        type: actionTypes.AUTH_LOGOUT
-    };
-};
-```
-* The above action will call reducer and then corresponding authLogout function called and token state is updated to null.
-```jsx
-const reducer = ( state = initialState, action ) => {
-    switch ( action.type ) {
-        case actionTypes.AUTH_LOGOUT: return authLogout(state, action);
-        default:
-            return state;
-    }
-};
-
-const authLogout = (state, action) => {
-    return updateObject(state, { token: null, userId: null });
-};
-```
-* To redirect we can do it in couple of ways one would be to forward the props of this component which will be loaded via the router,
-so therefore we could forward this props history and on that history object of the router,
-
-* Another method is very elegant way of redirect
-```jsx
-import { Redirect } from 'react-router-dom';
-
-.....
-....
-...
-render () {
-    return <Redirect to="/"/>;
-}
-
-```
-* We need to inform route path to load logout component
-```jsx
-import Logout from './containers/Auth/Logout/Logout';
-....
-....
-<Route path="/logout" component={Logout} />
-```
-#### Forwarding un authenticated users
-```jsx
-import { Redirect } from 'react-router-dom';
-render () {
-        ....
-        ...
-        let authRedirect = null;
-        if (this.props.isAuthenticated) {
-            authRedirect = <Redirect to="/"/>
-        }
-
-        return (
-            <div className={classes.Auth}>
-            {errorMessage}
-            // if isAuthenticated we are redirection to the base path
-            {authRedirect}
-                <form onSubmit={this.submitHandler}>
-                    {form}
-                    <Button btnType="Success">SUBMIT</Button>
-                </form>
-                <Button 
-                    clicked={this.switchAuthModeHandler}
-                    btnType="Danger">SWITCH TO {this.state.isSignup ? 'SIGNIN' : 'SIGNUP'}</Button>
-            </div>
-        );
-}
-
-const mapStateToProps = state => {
-    return {
-        isAuthenticated: state.auth.token !== null
-    };
-};
-```
-* FYI    this.props.history.push('/auth'); is come from react router..
-#### Persistent Auth state with local storage.
-* we can persistent our data in local storage , refer auth.js action.
-```jsx
-// Set local storage.
-localStorage.setItem('token', response.data.idToken);
-localStorage.setItem('expirationDate', expirationDate);
-localStorage.setItem('userId', response.data.localId);
-```
-* We have to remove the local storage .
-```jsx
-export const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('expirationDate');
-    localStorage.removeItem('userId');
-    return {
-        type: actionTypes.AUTH_LOGOUT
-    };
-};
-```
-
+* Don't complicate much just make sure our reducer works correctly, do we update our components correctly if the input changes , may be we can test do we fired a correct props on click a certain button all these this can be easily tested in isolated unit test.
