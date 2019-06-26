@@ -1,4 +1,132 @@
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+### minor improvement
+#### update object utility
+* use common update object utility function where ever possible
+```jsx
+export const updateObject = (oldObject, updatedProperties) => {
+    return {
+        ...oldObject,
+        ...updatedProperties
+    };
+};
+```
+* now we can import and use this utility function anywhere..
+```jsx
+const authStart = ( state, action ) => {
+    return updateObject( state, { error: null, loading: true } );
+};
+```
+#### unlock the redux dev tool only in devlopment mode .
+* Using environment variable (index js file) unlock the redux dev tool, only unlock this if we are in development mode.
+From env.js config we can access the Environment (development/ production)
+```jsx
+const composeEnhancers = process.env.NODE_ENV==='development' ? window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__  : null || compose;
+```
+* Here no need to import process which is available globally.
+#### Lazy loading.
+* Lets create async component
+```jsx
+import React, { Component } from 'react';
+
+const asyncComponent = (importComponent) => {
+    return class extends Component {
+        state = {
+            component: null
+        }
+
+        componentDidMount () {
+            importComponent()
+                .then(cmp => {
+                    this.setState({component: cmp.default});
+                });
+        }
+        
+        render () {
+            const C = this.state.component;
+
+            return C ? <C {...this.props} /> : null;
+        }
+    }
+}
+
+export default asyncComponent;
+```
+* How to use the above async component for example (App.js)
+```jsx
+import React, { Component } from 'react';
+import { Route, Switch, withRouter, Redirect } from 'react-router-dom';
+import { connect } from 'react-redux';
+import asyncComponent from './hoc/asyncComponent/asyncComponent';
+
+import Layout from './hoc/Layout/Layout';
+import BurgerBuilder from './containers/BurgerBuilder/BurgerBuilder';
+import Logout from './containers/Auth/Logout/Logout';
+import * as actions from './store/actions/index';
+
+const asyncCheckout = asyncComponent(() => {
+  return import('./containers/Checkout/Checkout');
+});
+
+const asyncOrders = asyncComponent(() => {
+  return import('./containers/Orders/Orders');
+});
+
+const asyncAuth = asyncComponent(() => {
+  return import('./containers/Auth/Auth');
+});
+
+class App extends Component {
+  componentDidMount () {
+    this.props.onTryAutoSignup();
+  }
+
+  render () {
+    let routes = (
+      <Switch>
+        <Route path="/auth" component={asyncAuth} />
+        <Route path="/" exact component={BurgerBuilder} />
+        <Redirect to="/" />
+      </Switch>
+    );
+
+    if ( this.props.isAuthenticated ) {
+      routes = (
+        <Switch>
+          <Route path="/checkout" component={asyncCheckout} />
+          <Route path="/orders" component={asyncOrders} />
+          <Route path="/logout" component={Logout} />
+          <Route path="/auth" component={asyncAuth} />
+          <Route path="/" exact component={BurgerBuilder} />
+          <Redirect to="/" />
+        </Switch>
+      );
+    }
+
+    return (
+      <div>
+        <Layout>
+          {routes}
+        </Layout>
+      </div>
+    );
+  }
+}
+
+const mapStateToProps = state => {
+  return {
+    isAuthenticated: state.auth.token !== null
+  };
+};
+
+const mapDispatchToProps = dispatch => {
+  return {
+    onTryAutoSignup: () => dispatch( actions.authCheckState() )
+  };
+};
+
+export default withRouter( connect( mapStateToProps, mapDispatchToProps )( App ) );
+
+```
 
 ### Testing Intro
 * Make sure Jest installed with you react create app.(package.json)
